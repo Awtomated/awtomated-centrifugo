@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "centrifugo-toolkit"
+version = "0.1.0"
+description = "Shared Centrifugo integration (publish helper, connection tokens, channel naming) for TransPM Django apps."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Proprietary" }
+authors = [{ name = "TransPM Backend" }]
+dependencies = [
+    "requests>=2.28",
+    "PyJWT>=2.4",
+]
+
+[project.optional-dependencies]
+django = ["Django>=4.0", "djangorestframework>=3.14"]
+test = ["pytest>=7.0", "pytest-django>=4.5"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["centrifugo_toolkit"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

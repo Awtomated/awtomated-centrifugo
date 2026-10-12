@@ -1,0 +1,46 @@
+# Local Centrifugo instance for developing/integration-testing centrifugo_toolkit against a
+# real server (unit tests should use centrifugo_toolkit.testing.fake_centrifugo instead).
+#
+# Usage:
+#   docker compose up -d
+#   CENTRIFUGO_API_URL=http://localhost:8888 \
+#   CENTRIFUGO_API_KEY=dev-api-key-change-me \
+#   CENTRIFUGO_TOKEN_HMAC_SECRET=dev-hmac-secret-change-me-32-bytes-min \
+#   python scripts/smoke_test.py
+#
+# Admin UI: http://localhost:8888 (no auth configured for local dev - do not reuse this
+# config.json outside a local machine).
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  centrifugo:
+    image: centrifugo/centrifugo:latest
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - ./docker/centrifugo-config.json:/centrifugo/config.json:ro
+    command: centrifugo -c config.json
+    ports:
+      - "8888:8000"
+    depends_on:
+      - redis
+
+  # Single-port forward for sharing with someone external (e.g. the frontend
+  # team): routes /connection/websocket to centrifugo, everything else to
+  # main-api's own dev server on the host machine. Forward/tunnel only this
+  # one port (8080) instead of 8000 and 8888 separately.
+  nginx-forward:
+    image: nginx:1.25
+    volumes:
+      - ./docker/nginx-forward.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - centrifugo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

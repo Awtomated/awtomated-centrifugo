@@ -1,0 +1,45 @@
+when:
+  - event: pull_request
+  - event: push
+    branch: main
+  - event: tag
+
+steps:
+  - name: check-import-order
+    image: python:3.12-slim
+    commands:
+      - pip install -q isort==6.0.1
+      - isort --check-only --diff centrifugo_toolkit tests
+
+  - name: check-formatting
+    image: python:3.12-slim
+    commands:
+      - pip install -q autopep8==2.3.2
+      - autopep8 --diff --exit-code --ignore=E501,W504 -r centrifugo_toolkit tests
+
+  - name: test
+    image: python:3.12-slim
+    commands:
+      - pip install -q -e ".[django,test]"
+      - pytest -v
+
+  - name: build
+    image: python:3.12-slim
+    depends_on: [test]
+    commands:
+      - pip install -q build
+      - python -m build
+
+  - name: publish
+    image: python:3.12-slim
+    depends_on: [build]
+    when:
+      - event: tag
+    environment:
+      TWINE_USERNAME:
+        from_secret: PYPI_USERNAME
+      TWINE_PASSWORD:
+        from_secret: PYPI_PASSWORD
+    commands:
+      - pip install -q twine
+      - twine upload dist/*

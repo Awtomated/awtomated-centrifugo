@@ -1,0 +1,32 @@
+{
+  "client": {
+    "token": {
+      "hmac_secret_key": "dev-hmac-secret-change-me-32-bytes-min"
+    },
+    "allowed_origins": [
+      "http://localhost:8765"
+    ]
+  },
+  "http_api": {
+    "key": "dev-api-key-change-me"
+  },
+  "admin": {
+    "enabled": true,
+    "password": "admin-change-me",
+    "secret": "dev-admin-secret-change-me-32-bytes"
+  },
+  "engine": {
+    "type": "redis",
+    "redis": {
+      "address": "redis:6379"
+    }
+  },
+  "channel": {
+    "without_namespace": {
+      "presence": true,
+      "history_size": 100,
+      "history_ttl": "300s",
+      "force_recovery": true
+    }
+  }
+}
