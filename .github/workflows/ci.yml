@@ -1,0 +1,54 @@
+# CI for centrifugo-toolkit: import order (isort), formatting (autopep8), pytest, package build.
+# Replaces the Woodpecker build pipeline (same commands, same tool versions, same Python).
+# The Woodpecker `twine upload` step on tags is gone: nothing is published to a package index;
+# consumers install from a git tag (see README).
+#
+# Self-contained on purpose: the shared reusable workflow in awtomated-infra (private) cannot be
+# called from this public repo, and the CI App secrets it needs are not shared with it.
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12' # same as the Woodpecker pipeline (python:3.12-slim) and main-api
+      - name: Check import order
+        if: ${{ !cancelled() }}
+        run: |
+          pip install -q isort==6.0.1
+          isort --check-only --diff centrifugo_toolkit tests
+      - name: Check formatting
+        if: ${{ !cancelled() }}
+        run: |
+          pip install -q autopep8==2.3.2
+          autopep8 --diff --exit-code --ignore=E501,W504 -r centrifugo_toolkit tests
+      - name: Test
+        id: test
+        if: ${{ !cancelled() }}
+        run: |
+          pip install -q -e ".[django,test]"
+          pytest -v
+      - name: Build
+        if: ${{ !cancelled() && steps.test.outcome == 'success' }}
+        run: |
+          pip install -q build
+          python -m build
