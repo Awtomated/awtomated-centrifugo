@@ -10,7 +10,7 @@ Distributed as a git-installable package — no private package index to stand u
 Always pin a tag, never a branch:
 
 ```bash
-pip install "git+https://<host>/<org>/centrifugo-toolkit.git@v0.1.0#egg=centrifugo-toolkit[django]"
+pip install "centrifugo-toolkit[django] @ git+https://github.com/Awtomated/awtomated-centrifugo.git@v0.1.0"
 ```
 
 To pick up a new version, bump the tag in the pinning repo's `requirements.txt` and reinstall.
@@ -151,6 +151,22 @@ password/secret, separate from `http_api.key` — don't reuse this config outsid
 
 The dev config in `docker/centrifugo-config.json` has no real secrets — don't reuse it anywhere
 but a local machine.
+
+## CI and releasing
+
+CI (GitHub Actions, `.github/workflows/ci.yml`, Python 3.12) runs on every pull request and on
+pushes to `main`: `isort --check-only` (isort 6.0.1), `autopep8 --diff --exit-code` (autopep8
+2.3.2, ignoring E501 and W504), `pytest -v` and `python -m build`.
+
+Nothing is published to a package index. To ship a new version:
+
+1. Bump `version` in `pyproject.toml`, update `CHANGELOG.md` and merge the pull request into `main`.
+2. Tag the merge commit (`vX.Y.Z`) and push the tag.
+3. In the consuming repo (`main-api`), change the tag in `requirements.txt`
+   (`centrifugo-toolkit[django] @ git+https://github.com/Awtomated/awtomated-centrifugo.git@vX.Y.Z`)
+   and open a pull request there.
+
+Never run `twine upload`.
 
 ## Status
 
